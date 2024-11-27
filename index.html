@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Решение системы уравнений методом Гаусса</title>
+    <style>
+        /* Основные стили для тела документа */
+        body {
+            font-family: Arial, sans-serif; /* Шрифт */
+            margin: 20px; /* Отступы */
+            background-color: black; /* Цвет фона */
+            color: white; /* Цвет текста */
+        }
+        /* Стили для полей ввода */
+        input {
+            margin: 5px 0; /* Отступы вокруг полей */
+            padding: 8px; /* Внутренние отступы */
+            width: 100px; /* Ширина полей */
+            border-radius: 10px; /* Закруглённые углы */
+            border: 1px solid #444; /* Цвет границы */
+            background-color: #222; /* Цвет фона полей */
+            color: white; /* Цвет текста в полях */
+        }
+        /* Стили для кнопок */
+        button {
+            padding: 8px 12px; /* Внутренние отступы */
+            margin-top: 10px; /* Отступ сверху */
+            border-radius: 10px; /* Закруглённые углы */
+            border: 1px solid #444; /* Цвет границы */
+            background-color: #444; /* Цвет фона кнопок */
+            color: white; /* Цвет текста на кнопках */
+            cursor: pointer; /* Курсор при наведении */
+        }
+        /* Эффект при наведении на кнопки */
+        button:hover {
+            background-color: #555; /* Цвет фона при наведении */
+        }
+        /* Стили для блока с результатами */
+        #result {
+            margin-top: 20px; /* Отступ сверху */
+        }
+    </style>
+</head>
+<body>
+
+<h1>Решение системы уравнений методом Гаусса</h1>
+<label for="n">Введите количество переменных:</label>
+<input type="number" id="n" min="1" required>
+<button onclick="setupMatrix()">Установить уравнения</button>
+
+<div id="matrixInput" style="display:none;"></div> <!-- Блок для ввода уравнений -->
+<div id="result"></div> <!-- Блок для вывода результата -->
+
+<script>
+// Функция для настройки матрицы уравнений
+function setupMatrix() {
+    const n = document.getElementById('n').value; // Получаем количество переменных
+    const matrixInput = document.getElementById('matrixInput');
+    matrixInput.innerHTML = ''; // Очищаем предыдущий ввод
+
+    // Генерация полей для ввода уравнений
+    for (let i = 0; i < n; i++) {
+        matrixInput.innerHTML += `<h3>Уравнение ${i + 1}:</h3>`;
+        for (let j = 0; j < n; j++) {
+            matrixInput.innerHTML += `<label>a${j + 1}:</label><input type="number" step="any" id="a${i}_${j}" required>`;
+        }
+        matrixInput.innerHTML += `<label>Свободный член:</label><input type="number" step="any" id="b${i}" required>`;
+    }
+    matrixInput.innerHTML += `<button onclick="calculate()">Решить</button>`;
+    matrixInput.style.display = 'block'; // Показываем блок ввода
+}
+
+// Функция для вычисления решения системы уравнений
+function calculate() {
+    const n = document.getElementById('n').value; // Получаем количество переменных
+    let a = []; // Массив для коэффициентов
+    let b = []; // Массив для свободных членов
+
+    // Сбор данных из полей ввода
+    for (let i = 0; i < n; i++) {
+        a[i] = [];
+        for (let j = 0; j < n; j++) {
+            a[i][j] = parseFloat(document.getElementById(`a${i}_${j}`).value); // Получаем коэффициенты
+        }
+        b[i] = parseFloat(document.getElementById(`b${i}`).value); // Получаем свободные члены
+    }
+
+    const result = gauss(a, b, n); // Вызываем функцию Гаусса для решения
+    displayResult(result); // Отображаем результат
+}
+
+// Функция для выполнения метода Гаусса
+function gauss(a, b, n) {
+    // Прямой ход
+    for (let i = 0; i < n; i++) {
+        let maxEl = Math.abs(a[i][i]); // Находим максимальный элемент в столбце
+        let maxRow = i; // Индекс строки с максимальным элементом
+        for (let k = i + 1; k < n; k++) {
+            if (Math.abs(a[k][i]) > maxEl) {
+                maxEl = Math.abs(a[k][i]);
+                maxRow = k; // Обновляем индекс строки
+            }
+        }
+        // Меняем местами текущую строку и строку с максимальным элементом
+        [a[maxRow], a[i]] = [a[i], a[maxRow]];
+        [b[maxRow], b[i]] = [b[i], b[maxRow]];
+
+        // Обнуление ниже главной диагонали
+        for (let j = i + 1; j < n; j++) {
+            let m = a[j][i] / a[i][i]; // Вычисляем множитель
+            for (let k = i; k < n; k++) {
+                a[j][k] -= m * a[i][k]; // Обновляем элементы матрицы
+            }
+            b[j] -= m * b[i]; // Обновляем свободные члены
+        }
+    }
+
+    // Обратный ход
+    let x = new Array(n); // Массив для решения
+    for (let i = n - 1; i >= 0; i--) {
+        x[i] = b[i]; // Начинаем с последнего свободного члена
+        for (let j = i + 1; j < n; j++) {
+            x[i] -= a[i][j] * x[j]; // Вычисляем значение переменной
+        }
+        x[i] /= a[i][i]; // Делаем последний шаг для получения значения
+    }
+
+    return x; // Возвращаем массив решений
+}
+
+// Функция для отображения результата
+function displayResult(result) {
+    const resultDiv = document.getElementById('result');
+    resultDiv.innerHTML = '<h3>Решение системы уравнений:</h3>'; // Заголовок результата
+    result.forEach((value, index) => {
+        resultDiv.innerHTML += `x${index + 1} = ${value.toFixed(6)}<br>`; // Форматируем и выводим значения
+    });
+}
+</script>
+
+</body>
+</html>
